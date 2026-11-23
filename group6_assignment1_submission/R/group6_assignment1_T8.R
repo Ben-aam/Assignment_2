@@ -1,21 +1,18 @@
 ##***************************
-## Group 6 - Trichinella sp. T8
-##
-## Original authors:
-## Ruhi Sajabi, Satchit Bhattacharya, Saniya Chadha,
-## Phuc Pham, Grace Enike
+## Collaboration - Editing and Improving Code
 ##
 ## Modified by: Behnam Abbaszadeh Aghdam
-## Assignment 2 - Software Tools(6210)
+## Assignment 2 - Software Tools (6210)
 ## Assignment 2 Teammate: Grace Enike
 ## Date: 2026-11-23
 ##
 ## Modifications:
 ## 1. Improved comparative insertion and deletion boxplots
-## 2. Added retrotransposon composition difference visualization
-## 3. Used simulated p-value for the chi-square test
+## 2. Created a reusable function used in stacked bar chart and composition difference analysis
+## 3. Added retrotransposon composition difference visualization
+## 4. Used simulated p-value for the chi-square test
 ##
-## Original script: Group 6 Assignment 1
+## Original script: Group 6 Assignment 1 - Trichinella sp. T8
 ##***************************
 
 ## _ Packages used -------
@@ -144,7 +141,7 @@ summary(trich_t8_retro$perc_del)
 
 ############################################### Show individual classes
 
-# Edit 1 part 1
+## Edit 1 Part 1 Comparative insertion boxplots ----
 
 retro_combined |>
   ggplot(aes(x = matching_class,
@@ -158,11 +155,11 @@ retro_combined |>
   geom_boxplot(position = position_dodge()) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 # angle 45 = rotate the x axis to fit 
-#h_just = aligns the labels 
+#h_just = aligns the labels
 
-###
+# Edit 1 part 1 ends here.
 
-# Edit 1 part 2
+## Edit 1 Part 2 Comparative deletion boxplots ----
 
 retro_combined |>
   ggplot(aes(x = matching_class,
@@ -177,12 +174,25 @@ retro_combined |>
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-## Grace's code template stops here ----
-## Novelty - Retrotransposon Composition - Stacked Bar Chart ----
-retro_combined |>
-  count(species, matching_class) |>
-  group_by(species) |> #Normalize counts into percentages for each genome
-  mutate(percent = n / sum(n) * 100) |>
+# Edit 1 part 2 ends here.
+
+## Edit 2 Reusable function applied two times ----
+
+# Function creation
+# Function for calculating retrotransposon class percentages
+
+calculate_te_percent <- function(data) {
+  data |>
+    count(species, matching_class) |>
+    group_by(species) |>
+    mutate(percent = n / sum(n) * 100)
+}
+
+# Edit 2 Application 1 Stacked bar chart
+
+# Novelty - Retrotransposon Composition - Stacked Bar Chart
+
+calculate_te_percent(retro_combined) |>
   ggplot(aes(x = species,
              y = percent,
              fill = matching_class)) +
@@ -195,21 +205,22 @@ retro_combined |>
   ) +
   theme_minimal()
 
-# Edit 2
+# Novelty - Retrotransposon Composition - Percentage Differences
 
-## Novelty - Retrotransposon Composition - Percentage Differences ----
+# Edit 2 Application 2 calculate retrotransposon percentages
 
 # Counting retrotransposons in each class for both species
 # Calculating the percentage represented by each class within each genome
 
-composition_difference <- retro_combined |>
-  count(species, matching_class) |>
-  group_by(species) |>
-  mutate(percent = n / sum(n) * 100) |>
+composition_difference <- calculate_te_percent(retro_combined) |>
+
+# Edit 2 ends here.
   
-  # Keeping the species, retrotransposon class and calculated percentage with select()
-  # Placing the percentage values for both species side by side using pivot_wider()
-  # Calculating the percentage-point difference between the two species where Positive values show a higher proportion in T8 and Negative values show a higher proportion in T. spiralis using mutate()
+## Edit 3 Retrotransposon composition difference visualization ----
+    
+# Keeping the species, retrotransposon class and calculated percentage with select()
+# Placing the percentage values for both species side by side using pivot_wider()
+# Calculating the percentage-point difference between the two species where Positive values show a higher proportion in T8 and Negative values show a higher proportion in T. spiralis using mutate()
   
   select(species, matching_class, percent) |>
   pivot_wider(
@@ -239,7 +250,7 @@ composition_difference |>
   coord_flip() +
   theme_bw()
 
-# Edit 2 ends.
+# Edit 3 ends here.
 
 ## Novelty - Statistical Analysis - Chi-square Test ----
 class_counts <- retro_combined |>
@@ -255,7 +266,7 @@ count_matrix <- class_counts |>
   as.matrix()
 # Creates a table for the statistical test
 
-# Edit 3
+## Edit 4 Simulated p-value for the chi-square test ----
 
 set.seed(6210)
 
@@ -263,4 +274,4 @@ chi_result <- chisq.test(count_matrix, simulate.p.value = TRUE, B = 10000)
 chi_result
 # Run the chi-square test and view results
 
-# Edit 3 ends.
+# Edit 4 ends here.
