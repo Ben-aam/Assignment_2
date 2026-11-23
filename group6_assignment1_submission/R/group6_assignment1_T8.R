@@ -1,10 +1,21 @@
-###### **********************
-## GROUP 6 - TRICHINELLA SP. T8
+##***************************
+## Group 6 - Trichinella sp. T8
 ##
-## Group 6 - Ruhi Sajabi, Satchit Bhattacharya, Saniya Chadha, Phuc Pham, and Grace Enike.
+## Original authors:
+## Ruhi Sajabi, Satchit Bhattacharya, Saniya Chadha,
+## Phuc Pham, Grace Enike
 ##
-## 2026-11-02
+## Modified by: Behnam Abbaszadeh Aghdam
+## Assignment 2 - Software Tools(6210)
+## Assignment 2 Teammate: Grace Enike
+## Date: 2026-11-23
 ##
+## Modifications:
+## 1. Improved comparative insertion and deletion boxplots
+## 2. Added retrotransposon composition difference visualization
+## 3. Used simulated p-value for the chi-square test
+##
+## Original script: Group 6 Assignment 1
 ##***************************
 
 ## _ Packages used -------
@@ -73,7 +84,7 @@ trich_main_retro |>
   ggplot(aes(x = matching_class, y = perc_del)) +
   geom_boxplot() +
   labs(title = "T. spiralis Retrotransposons", y ="Percent Deletions (%)" , x = "Retrotransposons class")
- 
+
 ## Percentage insertions for trich_t8_retro
 
 trich_t8_retro |> 
@@ -101,7 +112,7 @@ trich_t8_retro |>
   ggplot(aes(x = perc_insert, y = perc_del))  +
   geom_boxplot(aes(color = matching_class)) +
   geom_smooth()
- 
+
 ## Percentage deletion and insertion in trich_main
 
 trich_main_retro |> 
@@ -132,28 +143,32 @@ summary(trich_t8_retro$perc_del)
 
 
 ############################################### Show individual classes
+
+# Edit 1 part 1
+
 retro_combined |>
   ggplot(aes(x = matching_class,
              y = perc_insert,
-             fill = species)) + #fill species colours the box plot
+             fill = species)) +
   labs(
     title = "Insertion Percentages Across Retrotransposon Classes",
     x = "Retrotransposon Class",
     y = "Percentage Insertions (%)"
   ) +
-  geom_boxplot() +
-  facet_wrap(~species) + #make separate panels for each species instead of one graph 
+  geom_boxplot(position = position_dodge()) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 # angle 45 = rotate the x axis to fit 
 #h_just = aligns the labels 
 
 ###
+
+# Edit 1 part 2
+
 retro_combined |>
   ggplot(aes(x = matching_class,
              y = perc_del,
              fill = species)) +
-  geom_boxplot() +
-  facet_wrap(~species) +
+  geom_boxplot(position = position_dodge()) +
   labs(
     title = "Deletion Percentages Across Retrotransposon Classes",
     x = "Retrotransposon Class",
@@ -180,19 +195,51 @@ retro_combined |>
   ) +
   theme_minimal()
 
+# Edit 2
+
 ## Novelty - Retrotransposon Composition - Percentage Differences ----
-retro_combined |>
+
+# Counting retrotransposons in each class for both species
+# Calculating the percentage represented by each class within each genome
+
+composition_difference <- retro_combined |>
   count(species, matching_class) |>
   group_by(species) |>
   mutate(percent = n / sum(n) * 100) |>
-  select(species, matching_class, percent) |> #Place genome percentages side by side
+  
+  # Keeping the species, retrotransposon class and calculated percentage with select()
+  # Placing the percentage values for both species side by side using pivot_wider()
+  # Calculating the percentage-point difference between the two species where Positive values show a higher proportion in T8 and Negative values show a higher proportion in T. spiralis using mutate()
+  
+  select(species, matching_class, percent) |>
   pivot_wider(
     names_from = species,
     values_from = percent,
     values_fill = 0
   ) |>
-  mutate(difference = T8 - `T. spiralis`) |> #Calculate percentage-point differences (T8 minus T. spiralis)
+  mutate(difference = T8 - `T. spiralis`)
+
+# Displaying the retrotransposon classes with the largest differences first
+
+composition_difference |>
   arrange(desc(abs(difference)))
+
+# Visualization of the composition differences between the two species by creating horizontal bars showing the difference for each class
+# Adding a reference line where both species are equal
+
+composition_difference |>
+  ggplot(aes(x = matching_class, y = difference)) +
+  geom_col() +
+  geom_hline(yintercept = 0) +
+  labs(
+    title = "Retrotransposon Composition Differences",
+    x = "Retrotransposon Class",
+    y = "Difference in Composition (Percentage Points)"
+  ) +
+  coord_flip() +
+  theme_bw()
+
+# Edit 2 ends.
 
 ## Novelty - Statistical Analysis - Chi-square Test ----
 class_counts <- retro_combined |>
@@ -208,9 +255,12 @@ count_matrix <- class_counts |>
   as.matrix()
 # Creates a table for the statistical test
 
-chi_result <- chisq.test(count_matrix)
+# Edit 3
+
+set.seed(6210)
+
+chi_result <- chisq.test(count_matrix, simulate.p.value = TRUE, B = 10000)
 chi_result
 # Run the chi-square test and view results
 
-
-
+# Edit 3 ends.
